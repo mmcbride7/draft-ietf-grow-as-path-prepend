@@ -47,7 +47,7 @@
      </author>     
      
               <author fullname="Hongwei Li" initials="H." surname="Li">
-        <organization>Hewlett Packard</organization>
+        <organization>HP</organization>
         <address>
             <email>flycoolman@gmail.com</email>
         </address>
@@ -55,7 +55,7 @@
 
 
 
-    <date day="3" month="August" year="2020"/>
+    <date day="18" month="August" year="2020"/>
 
     <abstract>
       <t>AS Path Prepending provides a tool to manipulate the BGP AS_Path attribute
@@ -95,6 +95,42 @@
 
     </section>
     
+    <section title="Use Cases">  
+      <t>There are various reasons that AS Path Prepending is in use today including:</t>
+          <t><list style="symbols">
+            <t>Preferring one ISP over another ISP on the same ASBR or across different ASBRs</t>
+            <t>Preferring one ASBR over another ASBR in the same site </t>
+            <t>Utilize one path exclusively and another path solely as a backup</t>
+            <t>Signal to indicate that one path may have a different amount of capacity than another where the lower capacity link still takes traffic</t>
+          </list></t>
+          <t>The following illustration, from Geoff Hustons https://labs.apnic.net/?p=1264, shows how AS Prepending is typically used:</t>
+          
+        <t><figure align="left">
+          <artwork><![CDATA[      
+       
+               +---+    +---+
+           +---| D |----| F |
+           |   +---+    +---+
++---+   +---+             |
+| A |---| B |             |
++---+   +---+             |
+           |   +---+    +---+
+           +---| C |----| E |
+               +---+    +---+
+
+       
+      ]]></artwork>
+        </figure></t>
+          
+    <t>B will normally prefer the path via C to send traffic to E, as this represents the shorter AS path for B. 
+    If E were to prepend a further two instances of its own AS number when advertising its routes to C, then 
+    B will now see a different situation, where the AS Path via D represents the shorter path. Through 
+    the use of selective prepending E is able to alter the routing decision of B, even though B is not an adjacent 
+    neighbour of E. The result is that traffic from A and B will be passed via D and F to reach E, rather than via C. 
+    In this way prepending implements action at a distance where the routing decisions made by non-adjacent 
+    AS’s can be influenced by selective AS Path prepending.</t>
+          
+          </section>
 
     <section title="Problems">
       <t>Since it it so commonly used, what is the problem with the excessive use of AS Path Prepending? Here are
@@ -103,18 +139,19 @@
       
       <section title="Excessive Prepending">
  
-      <t>The risk of excessive use of AS Path Prepending can be illustrated with real-world examples. Consider the 
-      prefix (95.47.142.0/23) which is normally announced with an inordinate amount of prepending. A recent analysis 
-      revealed that 95.47.142.0/23 is announced to the world along the following AS path:</t>
+      <t>The risk of excessive use of AS Path Prepending can be illustrated with real-world examples that have been 
+      anonymized using documention prefixes <xref target="RFC5737"/> and AS's <xref target="RFC5398"/> . Consider the 
+      prefix 198.51.100.0/24 which is normally announced with an inordinate amount of prepending. A recent analysis 
+      revealed that 198.51.100.0/24 is announced to the world along the following AS path:</t>
       
-      <t>3255 197158 197158 197158 197158 197158 197158 197158 197158 197158 197158 197158 197158 197158 
-      197158 197158 197158 197158 197158 197158 197158 197158 197158 197158</t>
+      <t>64496 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511 64511
+      64511 64511 64511 64511 64511 64511 64511</t>
 
-      <t>In this example, the origin AS197158 appears 23 consecutive times before being passed on to a single 
-      upstream (AS3255), which passes it on to the global internet, prepended-to-all. An attacker, wanting to intercept or 
+      <t>In this example, the origin AS64511 appears 23 consecutive times before being passed on to a single 
+      upstream (AS64496), which passes it on to the global internet, prepended-to-all. An attacker, wanting to intercept or 
       manipulate traffic to this prefix, could enlist a datacenter to allow announcements 
-      of the same prefix with a fabricated AS path such as 999999 3255 197158. Here the fictional AS999999 represents 
-      the shady datacenter.  This malicious route would be pretty popular due to the shortened AS path length and might 
+      of the same prefix with a fabricated AS path such as 999999 64496 64511. Here the fictional AS999999 represents 
+      the shady datacenter.  This malicious route would be preferred due to the shortened AS path length and might 
       go unnoticed by the true origin, even if route-monitoring had been implemented. Standard BGP route monitoring 
       checks a route’s origin and upstream and both would be intact in this scenario. The length of the prepending gives 
       the attacker room to craft an AS path that would appear plausible to the casual observer, comply with origin validation 
@@ -124,11 +161,11 @@
          <section title="Prepending during a routing leak">
       <t>In April 2010, a service provider experienced a routing leak. While analyzing the leak something peculiar was noticed. 
       When we ranked the approximately 50,000 prefixes involved in the leak based on how many ASes accepted the leaked 
-      routes, most of the impact was constrained to China routes. However, two of the top five most-propagated leaked 
-      routes (listed in the table below) were US routes.</t>
-      <t>During the routing leak, nearly all of the ASes of the internet preferred the China leaked routes for 12.5.48.0/21 and 
-      12.4.196.0/22 because, at the time, these two US prefixes were being announced to the entire internet along the following 
-      excessively prepended AS path: 3257 7795 12163 12163 12163 12163 12163 12163. Virtually 
+      routes, most of the impact was constrained to Country A routes. However, two of the top five most-propagated leaked 
+      routes (listed in the table below) were Country B routes.</t>
+      <t>During the routing leak, nearly all of the ASes of the internet preferred the Country A leaked routes for 192.0.2.0/21 and 
+      198.51.100.0/22 because, at the time, these two Country B prefixes were being announced to the entire internet along the following 
+      excessively prepended AS path: 64496 64500 64511 64511 64511 64511 64511 64511. Virtually 
       any illegitimate route would be preferred over the legitimate route. In this case, the victim is all but ensuring their victimhood.</t>
       <t>There was only a single upstream seen in the prepending example from above, so the prepending was achieving nothing 
       except incurring risk. You would think such mistakes would be relatively rare, 
@@ -141,27 +178,27 @@
                  
             <section title="Route Competition">
       <t>So what happens when a non-prepended route competes against an excessively prepended route? Let’s consider a real-world 
-      example. The route 91.149.240.0/22 is normally announced with the origin prepended three times (41952 41952 41952) to 
-      three providers and prepended twice to a fourth. Beginning at 15:28:14 UTC on June 6, a new origin that was not prepended 
-      appeared in the routing table for this route. As is illustrated in the graphic below, AS60781 quickly became the most popular 
-      version of this route for the next week until it disappeared.</t>
+      example. The route 203.0.113.0/22 is normally announced with the origin prepended three times (64499 64499 64499) to 
+      three providers and prepended twice to a fourth. A new origin that was not prepended 
+      appeared in the routing table for this route. AS60781 quickly became the most preferred version of this route for the next week 
+      until it disappeared.</t>
       
-      <t>When both AS41952 and AS60781 were in contention for being considered the origin of this prefix, the non-prepended route was 
-      dominating as we would expect. In some cases, the impact of prepending isn’t as straightforward. Let’s take 66.220.224.0/19 as an 
+      <t>When both AS64499 and AS60781 were in contention for being considered the origin of this prefix, the non-prepended route was 
+      dominating as we would expect. In some cases, the impact of prepending isn’t as straightforward. Let’s take 192.0.2.0/19 as an 
       example. This prefix is prepended but isn’t one of the 60,000 prepended-to-all routes mentioned earlier because its prepending is 
       only visible to a little more than half of our BGP sources. In any event, this prefix is announced to the internet in two ways: it’s prepended 
-      to AS6939 and not prepended to AS174:</t>
+      to AS64498 and not prepended to AS64510:</t>
       
-      <t>...6939 17356 17356 17356 17356 17356 17356 17356 17356 17356 17356 17356</t>
-      <t>...174 17356</t>
+      <t>...64498 64500 64500 64500 64500 64500 64500 64500 64500 64500 64500</t>
+      <t>...64510 64500</t>
 
-      <t>From these two route options, one might reasonably infer that it is 17356’s intention to deprioritize routes to AS6939 by prepending 
-      itself 10 times on routes to that upstream. It may seem to follow that the non-prepended path to AS174 would be the most popular. 
-      However, the opposite is true. Despite extensive prepending, AS6939 is the more popular choice. In this case, prepending is going up 
-      against the local preferences of a legion of ASes: AS6939 has an extensive peering base of thousands of ASes. These ASes opt to send 
-      traffic for free through their AS6939 peering links instead of having to pay to send traffic through a transit provider (and via AS174) 
-      regardless of the AS path length. AS17356 could prepend their routes to AS6939 100 times (please don’t!) and AS6939 would still be the 
-      more popular provider.  Keep in mind that the average AS diameter of the internet is only around 4 hops, so prepending more than a 
+      <t>From these two route options, one might reasonably infer that it is 64500’s intention to deprioritize routes to AS64498 by prepending 
+      itself 10 times on routes to that upstream. It may seem to follow that the non-prepended path to AS64510 would be the most preferred. 
+      However, the opposite is true. Despite extensive prepending, AS64498 is the more preferred choice. In this case, prepending is going up 
+      against the local preferences of a legion of ASes: AS64498 has an extensive peering base of thousands of ASes. These ASes opt to send 
+      traffic for free through their AS64498 peering links instead of having to pay to send traffic through a transit provider (and via AS64510) 
+      regardless of the AS path length. AS64500 could prepend their routes to AS64498 100 times (please don’t!) and AS64498 would still be the 
+      more preferred provider.  Keep in mind that the average AS diameter of the internet is only around 4 hops, so prepending more than a 
       couple of times buys you nothing.</t>
         </section>
 
@@ -173,29 +210,45 @@
       parts of internet infrastructure.</t>
 
       <t>Much of the worst propagation of leaked routes during big leak events have been due to routes being prepended-to-all.
-           AS4671 leak of April 2014 (>320,000 prefixes) was prepended-to-all. And the AS4788 leak of June 2015 (>260,000 prefixes)
+           AS64505 leak of April 2014 (>320,000 prefixes) was prepended-to-all. And the AS64506 leak of June 2015 (>260,000 prefixes)
           was also prepended-to-all. Prepended-to-all prefixes are those seen as prepended by all (or nearly all) of the ASes of the internet.
           In this configuration, prepending is no longer shaping route propagation but is simply incentivizing ASes to choose another origin 
           if one were to suddenly appear whether by mistake or otherwise. The percentage of the IPv4 table that is prepended-to-all is 
           growing at 0.5% per year. The IPv6 table is growing slower at 0.2% per year. The reasons for using prepend-to-all appears 
           to be due to 1) the AS forgetting to remove the prepending for one of its transit providers when it is no longer needed and 2) the 
           AS attempting to de-prioritize traffic from transit providers over settlement-free peers and 3) there are simply a lot of errors in 
-          BGP routing. Consider the prepended AS path of 181.191.170.0/24 below:</t>
+          BGP routing. Consider the prepended AS path below:</t>
 
-        <t>52981 267429 267429 267492 267492 267429 267429 267492 267492
-                         267429 267429 267492 267492 267429</t>
+        <t>64496 64501 64501 64510 64510 64501 64510 64501 64501
+                         64510 64510 64501 64501 64510</t>
 
-        <t>The prepending here involves a mix of two distinct ASNs (267429 and 267492) with the last two digits transposed.</t>      
+        <t>The prepending here involves a mix of two distinct ASNs (64501 and 64510) with the last two digits transposed.</t>      
            </section>
          
             <section title="Memory">       
-      <t>Some BGP implementations have had memory corruption/fragmentation problems with long AS_PATHS.</t>
+      <t>BGP attribute sets are shared among stored routes, ie, if two stored routes have the same attribute sets, 
+      the attribute set is stored only once. AS Paths are shared among attribute sets so that if two stored attribute 
+      sets have the same AS Path, then the AS Path is stored only once. Storing them in the control plane is not a big 
+      problem. However, AS Paths can be sent in Netflow which is generated in the forwarding plane. AS Paths are 
+      not stored in expensive fast memory on the forwarding plane, but still, using memory on the forwarding plane has 
+      greater impact than on the control plane. An AS Path consists of AS_SEQUENCE (and other elements). An 
+      AS_SEQUENCE can contain a maximum of 255 ASNs. If the AS Path is longer, then multiple AS_SEQUENCE's 
+      are required. The code to parse them and create them is not often exercised and is a potential for bugs in fresh 
+      code. The older implementations have these bugs well and truly shaken out of them. Some BGP implementations 
+      have had memory corruption/fragmentation problems with long AS Paths.</t>
          </section>
          
                <section title="Errant announcement">  
-      <t>There was an Internet-wide outage caused by a single errant routing announcement. In this incident, AS47868 
+      <t>There was an Internet-wide outage caused by a single errant routing announcement. In this incident, AS64496 
       announced its one prefix with an extremely long AS path. Someone entered their ASN instead of the prepend count
-      47868 modulo 256 = 252 prepends and when a path lengths exceeded 255, routers crashed</t>
+      64496 modulo 256 = 252 prepends and when a path lengths exceeded 255, routers crashed</t>
+          </section>
+          
+              <section title="Alternatives to AS Path Prepend">  
+      <t>Robert: Let me try to put together various options on how could we provide the above objective without trashing Internet with 
+      long AS-PATHs. I can think of at least few options. Note that since some vendors ship you the tools to modify any part of 
+      the AS-PATH while in transit or for that matter BGP code is commodity and one could modify anything in the BGP UPDATE 
+      no matter what we recommend or even standardize there is no assurance that it will always work.</t>
           </section>
       
     </section>
@@ -204,9 +257,12 @@
         <t>Many of the best practices, or lack thereof, can be illustrated from the preceeding examples. Here's a summary of the
         best current practices of using AS Path Prepending:</t>
         
+        <t>Doug ToDo: histogram or table of the frequency of unique-aspath lengths (i.e. with all prepending flattened).  This would help 
+        contextualise the best practice recommendation.</t>
+        
               <t><list style="symbols">
             <t>Network operators should ensure prepending is absolutely necessary. Many of your networks have excessive prepending</t>
-            <t>Prepending more than a couple of times buys you nothing. So don't do it.</t>
+            <t>Prepending more than 5 times buys you nothing. So don't do it.</t>
             <t>Prepending-to-all is a self-inflicted and needless risk that serves little purpose. Those excessively prepending their routes 
         should consider this risk and adjust their routing configuration.</t>
             <t>It is not typical to see more than 20 ASes in a AS_PATH in the Internet today even with the use of AS_Path 
@@ -230,8 +286,8 @@
     <section title="Acknowledgement">
       <t/>
 
-      <t>The authors would like to thank Greg Skinner, Randy Bush, Dave Farmer, Nick Hilliard, Martijn Schmidt, Jakob Heitz, Michael Still for their
-      helpful comments.</t>
+      <t>The authors would like to thank Greg Skinner, Randy Bush, Dave Farmer, 
+      Nick Hilliard, Martijn Schmidt, Jakob Heitz, Michael Still and Geoff Huston for contributing to this document.</t>
     </section>
   </middle>
     
@@ -240,6 +296,8 @@
       <?rfc include="reference.RFC.2119"?>
       <?rfc include='reference.RFC.4271'?>
       <?rfc include='reference.RFC.8195'?>
+      <?rfc include='reference.RFC.5398'?>
+      <?rfc include='reference.RFC.5737'?>
     </references>
 
   </back>
