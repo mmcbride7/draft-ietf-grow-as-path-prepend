@@ -103,7 +103,8 @@
             <t>Utilize one path exclusively and another path solely as a backup</t>
             <t>Signal to indicate that one path may have a different amount of capacity than another where the lower capacity link still takes traffic</t>
           </list></t>
-          <t>The following illustration, from Geoff Hustons https://labs.apnic.net/?p=1264, shows how AS Prepending is typically used:</t>
+          <t>The following illustration, from Geoff Hustons <eref target="https://labs.apnic.net/?p=1264">Path Prepending in BGP</eref>, 
+          shows how AS Prepending is typically used:</t>
           
         <t><figure align="left">
           <artwork><![CDATA[      
