@@ -175,39 +175,14 @@
       route propagation. It is simply incentivizing ASes to choose another origin if one were to suddenly appear whether by mistake 
       or otherwise.</t>
                  </section>
-                 
-            <section title="Route Competition">
-      <t>So what happens when a non-prepended route competes against an excessively prepended route? Let’s consider a real-world 
-      example. The route 203.0.113.0/22 is normally announced with the origin prepended three times (64499 64499 64499) to 
-      three providers and prepended twice to a fourth. A new origin that was not prepended 
-      appeared in the routing table for this route. AS60781 quickly became the most preferred version of this route for the next week 
-      until it disappeared.</t>
-      
-      <t>When both AS64499 and AS60781 were in contention for being considered the origin of this prefix, the non-prepended route was 
-      dominating as we would expect. In some cases, the impact of prepending isn’t as straightforward. Let’s take 192.0.2.0/19 as an 
-      example. This prefix is prepended but isn’t one of the 60,000 prepended-to-all routes mentioned earlier because its prepending is 
-      only visible to a little more than half of our BGP sources. In any event, this prefix is announced to the internet in two ways: it’s prepended 
-      to AS64498 and not prepended to AS64510:</t>
-      
-      <t>...64498 64500 64500 64500 64500 64500 64500 64500 64500 64500 64500</t>
-      <t>...64510 64500</t>
-
-      <t>From these two route options, one might reasonably infer that it is 64500’s intention to deprioritize routes to AS64498 by prepending 
-      itself 10 times on routes to that upstream. It may seem to follow that the non-prepended path to AS64510 would be the most preferred. 
-      However, the opposite is true. Despite extensive prepending, AS64498 is the more preferred choice. In this case, prepending is going up 
-      against the local preferences of a legion of ASes: AS64498 has an extensive peering base of thousands of ASes. These ASes opt to send 
-      traffic for free through their AS64498 peering links instead of having to pay to send traffic through a transit provider (and via AS64510) 
-      regardless of the AS path length. AS64500 could prepend their routes to AS64498 100 times (please don’t!) and AS64498 would still be the 
-      more preferred provider.  Keep in mind that the average AS diameter of the internet is only around 4 hops, so prepending more than a 
-      couple of times buys you nothing.</t>
-        </section>
 
           <section title="Prepending to All">
       
-      <t>Out of approximately 750,000 routes in the IPv4 global routing table, nearly 60,000 BGP routes are prepended to 95% or more 
-      of hundreds of BGP sources. About 8% of the global routing table, or 1 out of every 12 BGP routes, is configured with prepends 
-      to virtually the entire internet. The 60,000 routes include entities of every stripe: governments, financial institutions, even important 
-      parts of internet infrastructure.</t>
+      <t>Based on analysis done in 2019, <eref target="https://blogs.oracle.com/internetintelligence/excessive-as-path-prepending-is-a-self-inflicted-vulnerability">Excessive AS Path Prepending</eref>,
+      out of approximately 750,000 routes in the IPv4 global routing table, nearly 60,000 
+      BGP routes are prepended to 95% or more of hundreds of BGP sources. About 8% of the global routing table, or 1 out of every 
+      12 BGP routes, is configured with prepends to virtually the entire internet. The 60,000 routes include entities of every stripe: 
+      governments, financial institutions, even important parts of internet infrastructure.</t>
 
       <t>Much of the worst propagation of leaked routes during big leak events have been due to routes being prepended-to-all.
            AS64505 leak of April 2014 (>320,000 prefixes) was prepended-to-all. And the AS64506 leak of June 2015 (>260,000 prefixes)
